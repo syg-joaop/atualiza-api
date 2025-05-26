@@ -23,7 +23,7 @@ exports.AppModule = AppModule = __decorate([
             atualiza_cliente_module_1.AtualizaClienteModule,
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
-                envFilePath: ['.env'],
+                envFilePath: [".env"],
             }),
             schedule_1.ScheduleModule.forRoot(),
         ],

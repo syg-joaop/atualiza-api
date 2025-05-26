@@ -22,12 +22,12 @@ let MigrateApiService = class MigrateApiService {
     async atualizaTabelaCentral() {
         try {
             const baseDir = process.cwd();
-            const migCentralDir = (0, path_1.join)(baseDir, 'src', 'core', 'migrations-knex');
+            const migCentralDir = (0, path_1.join)(baseDir, "src", "core", "migrations-knex");
             const knexCentral = await this.connection.conexao();
             const centralFiles = (0, fs_1.readdirSync)(migCentralDir)
-                .filter((f) => f.endsWith('.js'))
+                .filter((f) => f.endsWith(".js"))
                 .sort();
-            const appliedCentral = await knexCentral('knex_migrations').select('name');
+            const appliedCentral = await knexCentral("knex_migrations").select("name");
             const appliedNames = appliedCentral.map((r) => r.name);
             const pendentesCentral = centralFiles.filter((f) => !appliedNames.includes(f));
             for (const nome of pendentesCentral) {
@@ -37,21 +37,21 @@ let MigrateApiService = class MigrateApiService {
                 });
             }
             const clientes = await knexCentral
-                .select('idempresa')
-                .from('conexoes_clientes_cloud');
+                .select("idempresa")
+                .from("conexoes_clientes_cloud");
             const migClientesDir = migCentralDir;
             const clientFiles = (0, fs_1.readdirSync)(migClientesDir)
-                .filter((f) => f.endsWith('.js'))
+                .filter((f) => f.endsWith(".js"))
                 .sort();
             for (const idempresa of clientes) {
                 try {
                     const knexCliente = await this.connection.conexaoCliente(idempresa);
                     const historico = await knexCliente
-                        .select('script')
-                        .from('controle_versao');
+                        .select("script")
+                        .from("controle_versao");
                     const aplicados = historico.map((r) => r.script);
                     const arquivos = clientFiles.filter((f) => {
-                        const versaoCli = Number(f.split('_')[0]);
+                        const versaoCli = Number(f.split("_")[0]);
                         return versaoCli >= 2 && !aplicados.includes(f);
                     });
                     for (const arq of arquivos) {
@@ -59,68 +59,68 @@ let MigrateApiService = class MigrateApiService {
                             name: arq,
                             directory: migClientesDir,
                         });
-                        const versaoCli = arq.split('_')[0];
-                        await knexCliente('controle_versao')
+                        const versaoCli = arq.split("_")[0];
+                        await knexCliente("controle_versao")
                             .insert({
                             versao: versaoCli,
                             script: arq,
                             aplicado_em: new Date(),
                         })
-                            .onConflict('script')
+                            .onConflict("script")
                             .merge({
                             versao: versaoCli,
                             aplicado_em: new Date(),
                         });
-                        await knexCentral('versao_esperada_cliente')
+                        await knexCentral("versao_esperada_cliente")
                             .insert({
                             cliente_id: idempresa,
                             versao_instalada: versaoCli,
-                            status_conexao: 'ativo',
+                            status_conexao: "ativo",
                         })
-                            .onConflict('cliente_id')
+                            .onConflict("cliente_id")
                             .merge({
                             versao_instalada: versaoCli,
-                            status_conexao: 'ativo',
+                            status_conexao: "ativo",
                         });
                     }
                 }
                 catch (err) {
                     console.error(`Erro ao migrar cliente ${idempresa.idempresa}: `, err);
-                    await knexCentral('versao_esperada_cliente')
-                        .update({ status_conexao: 'offline' })
+                    await knexCentral("versao_esperada_cliente")
+                        .update({ status_conexao: "erro" })
                         .where({ cliente_id: idempresa })
-                        .onConflict('cliente_id')
-                        .merge({ status_conexao: 'offline' });
+                        .onConflict("cliente_id")
+                        .merge({ status_conexao: "erro" });
                 }
             }
         }
         catch (error) {
-            console.error('Erro ao atualizar tabela central: ', error);
-            throw new Error('Erro ao atualizar tabela central: ' + error.message);
+            console.error("Erro ao atualizar tabela central: ", error);
+            throw new Error("Erro ao atualizar tabela central: " + error.message);
         }
     }
     async atualizaClienteEspecifico(idempresa) {
         try {
             const baseDir = process.cwd();
-            const migCentralDir = (0, path_1.join)(baseDir, 'src', 'core', 'migrations-knex');
+            const migCentralDir = (0, path_1.join)(baseDir, "src", "core", "migrations-knex");
             const knexCentral = await this.connection.conexao();
-            const clienteExiste = await knexCentral('conexoes_clientes_cloud')
+            const clienteExiste = await knexCentral("conexoes_clientes_cloud")
                 .where({ idempresa })
                 .first();
             if (!clienteExiste) {
                 throw new Error(`Cliente com ID ${idempresa} não encontrado`);
             }
             const clientFiles = (0, fs_1.readdirSync)(migCentralDir)
-                .filter((f) => f.endsWith('.js'))
+                .filter((f) => f.endsWith(".js"))
                 .sort();
             try {
                 const knexCliente = await this.connection.conexaoCliente(idempresa);
                 const historico = await knexCliente
-                    .select('script')
-                    .from('controle_versao');
+                    .select("script")
+                    .from("controle_versao");
                 const aplicados = historico.map((r) => r.script);
                 const arquivos = clientFiles.filter((f) => {
-                    const versaoCli = Number(f.split('_')[0]);
+                    const versaoCli = Number(f.split("_")[0]);
                     return versaoCli >= 2 && !aplicados.includes(f);
                 });
                 for (const arq of arquivos) {
@@ -128,28 +128,28 @@ let MigrateApiService = class MigrateApiService {
                         name: arq,
                         directory: migCentralDir,
                     });
-                    const versaoCli = arq.split('_')[0];
-                    await knexCliente('controle_versao')
+                    const versaoCli = arq.split("_")[0];
+                    await knexCliente("controle_versao")
                         .insert({
                         versao: versaoCli,
                         script: arq,
                         aplicado_em: new Date(),
                     })
-                        .onConflict('script')
+                        .onConflict("script")
                         .merge({
                         versao: versaoCli,
                         aplicado_em: new Date(),
                     });
-                    await knexCentral('versao_esperada_cliente')
+                    await knexCentral("versao_esperada_cliente")
                         .insert({
                         cliente_id: idempresa,
                         versao_instalada: versaoCli,
-                        status_conexao: 'ativo',
+                        status_conexao: "ativo",
                     })
-                        .onConflict('cliente_id')
+                        .onConflict("cliente_id")
                         .merge({
                         versao_instalada: versaoCli,
-                        status_conexao: 'ativo',
+                        status_conexao: "ativo",
                     });
                 }
                 console.log(`Cliente ${idempresa} atualizado com sucesso`);
@@ -160,11 +160,11 @@ let MigrateApiService = class MigrateApiService {
             }
             catch (err) {
                 console.error(`Erro ao migrar cliente ${idempresa}: `, err);
-                await knexCentral('versao_esperada_cliente')
-                    .update({ status_conexao: 'offline' })
+                await knexCentral("versao_esperada_cliente")
+                    .update({ status_conexao: "offline" })
                     .where({ cliente_id: idempresa })
-                    .onConflict('cliente_id')
-                    .merge({ status_conexao: 'offline' });
+                    .onConflict("cliente_id")
+                    .merge({ status_conexao: "offline" });
                 throw new Error(`Erro ao atualizar cliente ${idempresa}: ${err.message}`);
             }
         }
